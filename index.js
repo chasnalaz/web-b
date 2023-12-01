@@ -6,34 +6,66 @@ var cors = require('cors')
 
 var jsonParser = bodyParser.json()
 
-var urlencodedParser = bodyParser.urlencoded ({ extended: false })
-const port = 3000
+var urlencodeParser = bodyParser.urlencoded ({ extended: false })
+const port = 3001
 
 
 app.use(cors())
 app.use(jsonParser);
-app.use(urlencodedParser);
+app.use(urlencodeParser);
 
-app.get('/', (req, res) => {
-  res.json('website-a')
-})
+app.get("/", async (req, res) => {
+  const response = await fetch("http://localhost:3000/");
+  const body = await response.text();
 
-app.post("/github-event", (req, res) => {
-  if (req.body.secret !== "secret123") {
-    return res.status(403).json({ error: "Invalid secret" });
-  }
-
-  console.log("Incoming Webhook");
-  res.json("");
+  console.log(body);
+  res.json("website-b");
 });
 
-app.post("/github", (req, res) => {
-  if (req.body.secret !== "secret123") {
-    return res.status(403).json({ error: "Invalid secret" });
-  }
+app.get("/trigger-webhook-event", async (req, res) => {
+  try {
+    const data = {
+      secret: "secret123",
+    };
 
-  console.log("Incoming Webhook");
-  res.json("");
+    const response = await fetch("http://localhost:3000/github-event", {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    // Handle the response if needed
+    const responseData = await response.json();
+    console.log(responseData);
+
+    res.json("Webhook event triggered");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.get("/trigger-webhook", async (req, res) => {
+  try {
+    const data = {
+      secret: "secret123",
+    };
+
+    const response = await fetch("http://localhost:3000/github", {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    // Handle the response if needed
+    const responseData = await response.json();
+    console.log(responseData);
+
+    res.json("Webhook triggered");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
 });
 
 app.listen(port, () => {
